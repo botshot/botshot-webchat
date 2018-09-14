@@ -1,102 +1,50 @@
-import json
 import logging
-
-import random
-
-from botshot.core.chat_session import ChatSession
+from botshot.core.chat_session import ChatSession, Profile
 from botshot.core.parsing.message_parser import parse_text_message
-from botshot.tasks import accept_user_message
-
+from botshot.core.parsing.user_message import UserMessage
+import uuid
+import random
+import time
 
 class WebchatInterface:
     name = 'webchat'
     prefix = 'web'
-    messages = []
-    states = []
 
-    @staticmethod
-    def clear():
-        WebchatInterface.messages = []
-        WebchatInterface.states = []
+    def __init__(self, webchat_id):
+        self.webchat_id = webchat_id
 
-    @staticmethod
-    def load_profile(uid):
-        return {'first_name': 'Tests', 'last_name': ''}
+    def get_unique_id(self):
+        return self.webchat_id
 
-    @staticmethod
-    def post_message(session, response):
-        pass
-        # uid = session.meta.get("uid")
-        #data = json.dumps(response.to_response())
+    def load_profile(self):
+        return Profile()
 
-
-    @staticmethod
-    def send_settings(settings):
+    def post_message(self, response):
         pass
 
-    @staticmethod
-    def processing_start(session):
+    def send_settings(self, settings):
         pass
 
-    @staticmethod
-    def processing_end(session):
+    def processing_start(self):
         pass
 
-    @staticmethod
-    def state_change(state):
-        if not WebchatInterface.states or WebchatInterface.states[-1] != state:
-            WebchatInterface.states.append(state)
+    def processing_end(self):
+        pass
+
+    def state_change(self, state_name):
+        pass
+
+    def parse_message(self, raw_message) -> UserMessage:
+        text = raw_message['text']
+        if raw_message.get("payload"):
+            return UserMessage('postback', text=text, payload=raw_message['payload'])
+        return parse_text_message(text)
 
     @staticmethod
-    def parse_message(user_message, num_tries=1):
-        logging.info('[WEBCHAT] @ parse_message')
-        if user_message.get('text'):
-            return parse_text_message(user_message.get('text'))
-        elif user_message.get("payload"):
-            # data = json.loads(user_message["payload"])
-            data = user_message['payload']
-            # data = json.loads(b64decode(user_message["payload"]).decode())
-            logging.info("Payload is: {}".format(data))
-            if isinstance(data, dict):
-                return {'entities': data, 'type': 'postback'}
-            else:
-                from botshot.core.serialize import json_deserialize
-                payload = json.loads(data, object_hook=json_deserialize)
-                payload['_message_text'] = [{'value': None}]
-                return {'entities': payload, 'type': 'postback'}
+    def make_webchat_id() -> str:
+        return uuid.uuid4().hex
 
     @staticmethod
-    def accept_request(uid, text):
-        uid = "web___0"  # TODO str(msg['uid'])
-
-        logging.info('[WEBCHAT] Received message from {}'.format(uid))
-        session = ChatSession(WebchatInterface, uid, meta={"uid": uid})
-        accept_user_message.delay(session.to_json(), {"text": text})
-
-    @staticmethod
-    def accept_postback(uid, text, data):
-        uid = "web___0"  # TODO str(msg['uid'])
-        data = json.loads(data)
-
-        logging.info('[WEBCHAT] Received postback from {}'.format(uid))
-        session = ChatSession(WebchatInterface, uid, meta={"uid": uid})
-        accept_user_message.delay(session.to_json(), {"_message_text": text, "payload": data})
-
-#     @staticmethod
-#     def make_uid(username) -> str:
-#         uid = None
-#         tries = 0
-#         while (not uid or len(WebMessageData.objects.filter(uid__exact=uid)) != 0) or tries < 100:
-#             uid = '_'.join([str(username), str(random.randint(1000, 99999))])
-#             tries += 1
-#         # delete messages for old session with this uid, if there was one
-#         # FIXME invalidate the previous user's session!
-#         try:
-#             WebMessageData.objects.get(uid__exact=uid).delete()
-#         except Exception:
-#             pass  # first user, there is no such table yet
-#         return uid
-#
-#     @staticmethod
-#     def destroy_uid(uid):
-#         WebMessageData.objects.filter(uid__exact=uid).delete()
+    def make_random_name(min_sylables, max_sylables) -> str:
+        length = random.randint(min_sylables, max_sylables) * 2
+        return ''.join([(random.choice('aeiouy') if i % 2 else random.choice('bcdfghjklmnpqrstvwxz')) for i in range(0, length)]).capitalize()
