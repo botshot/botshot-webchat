@@ -6,6 +6,7 @@ from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from botshot.core.chat_session import ChatSession
+from botshot.tasks import accept_user_message
 from botshot.webchat.interface import WebchatInterface
 from botshot.models import MessageLog
 from .forms import MessageForm
@@ -29,8 +30,8 @@ def webchat(request):
         webchat_id = request.session['webchat_id']
         interface = WebchatInterface(webchat_id=webchat_id)
         logging.info('[WEBCHAT] Received message from {}: {}'.format(webchat_id, raw_message))
-        session = ChatSession(interface)
-        session.accept(raw_message)
+        session = ChatSession(interface, unique_id=webchat_id)
+        accept_user_message.delay(session, raw_message)
         return JsonResponse({'ok': True})
 
     if 'webchat_id' in request.session:
@@ -61,8 +62,8 @@ def do_logout(request):
 
 def _get_webchat_id_messages(webchat_id):
     interface = WebchatInterface(webchat_id=webchat_id)
-    chat_id = ChatSession.create_chat_id(interface)
-    return MessageLog.objects.filter(chat_id=chat_id).order_by('time')
+    # chat_id = ChatSession.create_chat_id(interface)
+    return MessageLog.objects.filter(chat_id=webchat_id).order_by('time')
 
 
 def get_last_change(request):

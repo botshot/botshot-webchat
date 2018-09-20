@@ -19,16 +19,16 @@ class WebchatInterface:
     def load_profile(self):
         return Profile()
 
-    def post_message(self, response):
+    def post_message(self, session, response):
         pass
 
     def send_settings(self, settings):
         pass
 
-    def processing_start(self):
+    def processing_start(self, session):
         pass
 
-    def processing_end(self):
+    def processing_end(self, session):
         pass
 
     def state_change(self, state_name):
