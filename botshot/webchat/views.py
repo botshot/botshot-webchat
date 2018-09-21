@@ -37,12 +37,18 @@ def webchat(request):
     if 'webchat_id' in request.session:
         messages = _get_webchat_id_messages(request.session['webchat_id'])
     else:
-        default_msg = MessageLog()
-        default_msg.is_from_user = False
-        default_msg.time = datetime.now()
-        default_msg.message_type = 'default'
-        default_msg.text = 'Hi there, this is the default greeting message!'
-        messages = [default_msg]
+        messages = []
+        welcome_msg = settings.BOT_CONFIG.get(
+            'WEBCHAT_WELCOME_MESSAGE',
+            'Hi there, this is the default greeting message!'
+        )
+        if welcome_msg:
+            default_msg = MessageLog()
+            default_msg.is_from_user = False
+            default_msg.time = datetime.now()
+            default_msg.message_type = 'default'
+            default_msg.text = welcome_msg
+            messages.append(default_msg)
 
     context = {
         'messages': messages,
