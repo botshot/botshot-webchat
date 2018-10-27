@@ -1,44 +1,59 @@
+import json
 import logging
-from botshot.core.chat_session import ChatSession, Profile
-from botshot.core.parsing.message_parser import parse_text_message
-from botshot.core.parsing.user_message import UserMessage
-import uuid
 import random
 import time
+import uuid
 
-class WebchatInterface:
+from botshot.core.chat_manager import ChatManager
+from botshot.core.interfaces import BotshotInterface
+from botshot.core.parsing.raw_message import RawMessage
+from botshot.models import ChatMessage
+from botshot.tasks import run_async
+
+
+class WebchatInterface(BotshotInterface):
+
     name = 'webchat'
-    prefix = 'web'
 
-    def __init__(self, webchat_id):
-        self.webchat_id = webchat_id
+    def webhook(self, request):
+        manager = ChatManager()
+        
+        text = request.POST.get('message')
+        payload = None
+        if request.POST.get('payload'):
+            payload = json.loads(request.POST.get('payload'))
 
-    def get_unique_id(self):
-        return self.webchat_id
+        if not text and not payload:
+            logging.warning("[Webchat] Neither text nor payload was provided")
+            return False
 
-    def load_profile(self):
-        return Profile()
+        webchat_id = request.session["webchat_id"]
+        msg_type = ChatMessage.BUTTON if payload else ChatMessage.MESSAGE
 
-    def post_message(self, session, response):
+        raw_message = RawMessage(
+            interface=self,
+            raw_user_id=webchat_id,
+            raw_conversation_id=webchat_id,
+            conversation_meta={},
+            type=msg_type,
+            text=text,
+            payload=payload,
+            timestamp=time.time()
+        )
+
+        self.on_message_received(raw_message)
+        logging.info("[Webchat] Received raw message: %s", raw_message)
+        run_async(manager.accept, raw_message=raw_message)
+        return True
+
+    def on_message_received(self, raw_message):
         pass
 
-    def send_settings(self, settings):
+    def send_responses(self, conversation, reply_to, responses):
         pass
 
-    def processing_start(self, session):
+    def broadcast_responses(self, conversations, responses):
         pass
-
-    def processing_end(self, session):
-        pass
-
-    def state_change(self, state_name):
-        pass
-
-    def parse_message(self, raw_message) -> UserMessage:
-        text = raw_message['text']
-        if raw_message.get("payload"):
-            return UserMessage('postback', text=text, payload=raw_message['payload'])
-        return parse_text_message(text)
 
     @staticmethod
     def make_webchat_id() -> str:

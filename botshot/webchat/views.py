@@ -3,36 +3,28 @@ from datetime import datetime
 
 from django.conf import settings
 from django.db.models import Max
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
-from botshot.core.chat_session import ChatSession
-from botshot.tasks import accept_user_message
+
+from botshot.models import ChatMessage
 from botshot.webchat.interface import WebchatInterface
-from botshot.models import MessageLog
 from .forms import MessageForm
 import logging
 
+
 def webchat(request):
     if request.method == 'POST':
-        if request.POST.get('message'):
-            text = request.POST.get('message')
-            raw_message = {'text': text}
-            if request.POST.get('payload'):
-                raw_message['payload'] = json.loads(request.POST.get('payload'))
-        else:
+        if not request.POST.get('message'):
             print("Error, message not set in POST")
-            return
+            return HttpResponse(400)
 
         if 'webchat_id' not in request.session:
             webchat_id = WebchatInterface.make_webchat_id()
             request.session['webchat_id'] = webchat_id
 
-        webchat_id = request.session['webchat_id']
-        interface = WebchatInterface(webchat_id=webchat_id)
-        logging.info('[WEBCHAT] Received message from {}: {}'.format(webchat_id, raw_message))
-        session = ChatSession(interface, unique_id=webchat_id)
-        accept_user_message.delay(session, raw_message)
-        return JsonResponse({'ok': True})
+        interface = WebchatInterface()
+        is_ok = interface.webhook(request)
+        return JsonResponse({'ok': True}) if is_ok else HttpResponse(400)
 
     if 'webchat_id' in request.session:
         messages = _get_webchat_id_messages(request.session['webchat_id'])
@@ -43,12 +35,12 @@ def webchat(request):
             'Hi there, this is the default greeting message!'
         )
         if welcome_msg:
-            default_msg = MessageLog()
-            default_msg.is_from_user = False
-            default_msg.time = datetime.now()
-            default_msg.message_type = 'default'
-            default_msg.text = welcome_msg
-            messages.append(default_msg)
+            default_message = ChatMessage()
+            default_message.type = ChatMessage.MESSAGE
+            default_message.text = welcome_msg
+            default_message.time = datetime.now()
+            default_message.is_user = False
+            messages.append(default_message)
 
     context = {
         'messages': messages,
@@ -67,9 +59,7 @@ def do_logout(request):
 
 
 def _get_webchat_id_messages(webchat_id):
-    interface = WebchatInterface(webchat_id=webchat_id)
-    # chat_id = ChatSession.create_chat_id(interface)
-    return MessageLog.objects.filter(chat_id=webchat_id).order_by('time')
+    return ChatMessage.objects.filter(conversation__raw_conversation_id=webchat_id).order_by('time')
 
 
 def get_last_change(request):

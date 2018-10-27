@@ -24,13 +24,13 @@
 <div id="list_wrap" data-simplebar>
     <div id="list">
         {% for m in messages %}
-            <div class="message-wrap {% if m.is_from_user %} user-wrap {% else %} bot-wrap {% endif %}">
+            <div class="message-wrap {% if m.is_user %} user-wrap {% else %} bot-wrap {% endif %}">
                 <div class="time">[{{ m.time }}]</div>
 
-                <img class="circle-image" src="{% if m.is_from_user %}{% static user_img %}{% else %}{% static bot_img %}{% endif %}"
+                <img class="circle-image" src="{% if m.is_user %}{% static user_img %}{% else %}{% static bot_img %}{% endif %}"
                      onerror='this.onerror=null; this.src="https://placehold.it/100x100"'/>
 
-                {% if m.message_type == 'TextMessage' %}
+                {% if m.type == 'message' %}
                     <div class="bubble">
                         <span class="text">{{ m.text }}</span>
                     </div>
@@ -69,7 +69,7 @@
                         </div>
                     {% endif %}
 
-                {% elif m.message_type == 'CarouselTemplate' %}
+                {% elif m.type == 'CarouselTemplate' %}
                     <!-- Horizontal (Carousel) template -->
                     <div class="template-message carousel-template" data-simplebar>
                     {% for e in m.response_dict.elements %}
@@ -117,17 +117,17 @@
                         </div>
                     {% endfor %}
                     </div>
-                {% elif m.message_type == 'postback' %}
+                {% elif m.type == 'postback' %}
                     <div class="bubble bubble-postback">
                         <span class="text">{{ m.text }}</span>
                     </div>
-                {% elif m.message_type == 'message' %}
+                {% elif m.type == 'message' %}
                     <div class="bubble">
                         <span class="text">{{ m.text }}</span>
                     </div>
                 {% else %}
                     <div class="bubble">
-                        <span class="text">{{ m.message_type }}: {{ m.text }}</span>
+                        <span class="text">{{ m.type }}: {{ m.text }}</span>
                     </div>
                 {% endif %}
             <div class="clearfix"></div>
