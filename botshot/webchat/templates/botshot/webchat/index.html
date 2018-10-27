@@ -31,11 +31,13 @@
                      onerror='this.onerror=null; this.src="https://placehold.it/100x100"'/>
 
                 {% if m.type == 'message' %}
+                    {% if m.text %}
                     <div class="bubble">
                         <span class="text">{{ m.text }}</span>
                     </div>
+                    {% endif %}
 
-                    {% if m.response_dict.quick_replies != None %}
+                    {% if m.response_dict.buttons != None %}
                         <div class="clearfix"></div>
                         <div class="buttons">
                             {% for b in m.response_dict.buttons %}
@@ -69,29 +71,31 @@
                         </div>
                     {% endif %}
 
-                {% elif m.type == 'CarouselTemplate' %}
-                    <!-- Horizontal (Carousel) template -->
-                    <div class="template-message carousel-template" data-simplebar>
-                    {% for e in m.response_dict.elements %}
-                        <div class="template-element carousel-element">
-                            <img src="{{ e.image_url }}"
-                                 onerror="this.onerror=null;this.src='https://placehold.it/250x150'"/>
-                            <h3>{{ e.title }}</h3>
-                            <p>{{ e.subtitle }}</p>
-                            <div class="buttons">
-                            {% for b in e.buttons %}
-                                {% if b.type == 'web_url' %}
-                                    <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
-                                {% elif b.type == 'postback' %}
-                                    <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
-                                        {{ b.title }}
-                                    </button>
-                                {% endif %}
-                            {% endfor %}
+                    {% if m.response_dict.elements %}
+                        <!-- Horizontal (Carousel) template -->
+                        <div class="template-message carousel-template" data-simplebar>
+                        {% for e in m.response_dict.elements %}
+                            <div class="template-element carousel-element">
+                                <img src="{{ e.image_url }}"
+                                     onerror="this.onerror=null;this.src='https://placehold.it/250x150'"/>
+                                <h3>{{ e.title }}</h3>
+                                <p>{{ e.subtitle }}</p>
+                                <div class="buttons">
+                                {% for b in e.buttons %}
+                                    {% if b.type == 'web_url' %}
+                                        <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
+                                    {% elif b.type == 'postback' %}
+                                        <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
+                                            {{ b.title }}
+                                        </button>
+                                    {% endif %}
+                                {% endfor %}
+                                </div>
                             </div>
+                        {% endfor %}
                         </div>
-                    {% endfor %}
-                    </div>
+
+                    {% endif %}
 
                 {% elif m.message.attachment.payload.template_type == 'list' %}
 
