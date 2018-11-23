@@ -79,14 +79,18 @@
                                 <img src="{{ e.image_url }}"
                                      onerror="this.onerror=null;this.src='https://placehold.it/250x150'"/>
                                 <h3>{{ e.title }}</h3>
-                                <p>{{ e.subtitle }}</p>
+                                <p>{{ e.subtitle | default_if_none:"" }}</p>
                                 <div class="buttons">
                                 {% for b in e.buttons %}
-                                    {% if b.type == 'web_url' %}
+                                    {% if b.url %}
                                         <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
-                                    {% elif b.type == 'postback' %}
+                                    {% elif b.payload %}
                                         <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
                                             {{ b.title }}
+                                        </button>
+                                    {% else %}
+                                        <button onclick="alert('Button type not supported in web chat')">
+                                        {{ b.title }}
                                         </button>
                                     {% endif %}
                                 {% endfor %}
@@ -106,17 +110,21 @@
                             <img src="{{ e.image_url }}"
                                  onerror="this.onerror=null;this.src='https://placehold.it/250x150'"/>
                             <h3>{{ e.title }}</h3>
-                            <p>{{ e.subtitle }}</p>
+                            <p>{{ e.subtitle | default_if_none:"" }}</p>
                             <div class="buttons">
-                            {% for b in e.buttons %}
-                                {% if b.type == 'web_url' %}
-                                    <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
-                                {% elif b.type == 'postback' %}
-                                    <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs}}')">
+                                {% for b in e.buttons %}
+                                    {% if b.url %}
+                                        <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
+                                    {% elif b.payload %}
+                                        <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
+                                            {{ b.title }}
+                                        </button>
+                                    {% else %}
+                                        <button onclick="alert('Button type not supported in web chat')">
                                         {{ b.title }}
-                                    </button>
-                                {% endif %}
-                            {% endfor %}
+                                        </button>
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
                     {% endfor %}
