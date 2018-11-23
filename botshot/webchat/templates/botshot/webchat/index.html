@@ -40,15 +40,19 @@
                     {% if m.response_dict.buttons != None %}
                         <div class="clearfix"></div>
                         <div class="buttons">
-                            {% for b in m.response_dict.buttons %}
-                                {% if b.type == 'web_url' %}
-                                    <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
-                                {% elif b.type == 'postback' %}
-                                    <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
-                                        {{ b.title }}
-                                    </button>
-                                {% endif %}
-                            {% endfor %}
+                        {% for b in m.response_dict.buttons %}
+                            {% if b.url %}
+                                <button onclick="gourl('{{ b.url }}')">{{ b.title }}</button>
+                            {% elif b.payload %}
+                                <button onclick="postback('{{ b.title }}', '{{ b.payload | json | escapejs }}')">
+                                    {{ b.title }}
+                                </button>
+                            {% else %}
+                                <button onclick="alert('Button type not supported in web chat')">
+                                {{ b.title }}
+                                </button>
+                            {% endif %}
+                        {% endfor %}
                         </div>
                     {% endif %}
 
